@@ -31,43 +31,43 @@ urn<-function  (u, prob=NULL) {
 
 	if (is.null(u)) {
 		stop("Argument items missing with no default")
-		return (null);
+		return (null)
 	}
 	if (!is.vector(u)) {
 		stop("u must be a vector")
-		return (null);
+		return (null)
 	}
 	if (sum(u<=0)>0) {
-		stop("u must be >0");
+		stop("u must be >0")
 	}
-	tmp <-new.env();
+	tmp <-new.env()
 	if (!is.null(prob) ) {
 		if (!is.vector(prob)) {
-			stop("Prob must be vector");
+			stop("Prob must be vector")
 		} 
 		if (length(prob) != length(u)) {
-			stop("Probability vector must have same length as u");
+			stop("Probability vector must have same length as u")
 		}
 		if (!is.list(u)) {
-			stop("Weights are only valid with list type.");
-			return(null);
+			stop("Weights are only valid with list type.")
+			return(null)
 		}
 		if (sum(prob<0)>=1) {
-			stop("Weights must be non-negative");
-			return(null);
+			stop("Weights must be non-negative")
+			return(null)
 		}
 		if (sum(prob)==0) {
 			stop("Weights sum to zero.")
-			return(null);
+			return(null)
 		}
-		assign("p", as.list(prob), envir=tmp);
-		assign("pc", as.list(prob), envir=tmp);
+		assign("p", as.list(prob), envir=tmp)
+		assign("pc", as.list(prob), envir=tmp)
 	} 
-	assign("current", u, envir=tmp);
-	assign("initial", u, envir=tmp);
-	ul<-list(tmp);
-	class(ul)<-"urn";
-	return(ul);
+	assign("current", u, envir=tmp)
+	assign("initial", u, envir=tmp)
+	ul<-list(tmp)
+	class(ul)<-"urn"
+	return(ul)
 }
 
 # print.urn (u)
@@ -76,76 +76,76 @@ urn<-function  (u, prob=NULL) {
 
 print.urn<- function( x, ... ) {
 	if (is.list(get("current", envir=x[[1]]))) {
-		cat ("List type: \n");
+		cat ("List type: \n")
 	} else {
-		cat ("Vector type: \n");
+		cat ("Vector type: \n")
 	}
        cat(	paste("current: ", 
 			paste(get("current", envir=x[[1]]), collapse=", ")
 		, "\n") 
-  	);
+  	)
 
 	cat(	paste("initial: ", 
 			paste(get("initial", envir=x[[1]]), collapse=", ")
 		, "\n") 
-  	);
+  	)
 	if (exists("p", envir=u[[1]], inherits=FALSE)) {
 	   cat(	paste("probability weights: ", 
 			paste(get("p", envir=x[[1]]), collapse=", ")
 		, "\n") 
-  	   );
+  	   )
 	}
 
 }
 
 
 sampleuList<-function(u,size) {
-	tmpc = get("current", envir=u[[1]]);
-	s = seq(1,length(tmpc));
+	tmpc = get("current", envir=u[[1]])
+	s = seq(1,length(tmpc))
 
 	
 	if (!exists("p", envir=u[[1]], inherits=FALSE)) {
-		ind = sample(s,size);
+		ind = sample(s,size)
 	} else {
-		p = get("pc", envir=u[[1]]);
-		ind = sample(s,size,prob=p);
-		p[ind]=NULL;
-		assign("pc", p, envir=u[[1]]);
+		p = get("pc", envir=u[[1]])
+		ind = sample(s,size,prob=p)
+		p[ind]=NULL
+		assign("pc", p, envir=u[[1]])
 	}
-	r = tmpc[ind];
-	tmpc[ind]=NULL;
-	assign("current", tmpc, envir=u[[1]]);
+	r = tmpc[ind]
+	tmpc[ind]=NULL
+	assign("current", tmpc, envir=u[[1]])
 	return(r);	
 }
 
 
 sampleuVector<-function(u,size) {
 
-	s = vector(mode="numeric",size);
+	s = vector(mode="numeric",size)
 	
 	# for performance, do these outside of loop
-	tmpc = get("current", envir=u[[1]]);
+	tmpc = get("current", envir=u[[1]])
 	n = sum(tmpc); 
 	r=runif(size); 
 	
 	for (i in 1:size) {
-		cp = 0;
+		cp = 0
 		for (j in 1:length(tmpc)) {
-			rn = r[i]*n;
-			cp = cp + tmpc[j];
+			rn = r[i]*n
+			cp = cp + tmpc[j]
 			if (rn<=cp) {
 				if (rn>0) {
-					s[i]=j;
-					n=n-1;
-					tmpc[j]=tmpc[j]-1;
-					break;
+					s[i]=j
+					n=n-1
+					tmpc[j]=tmpc[j]-1
+					break
 				}
 			}
 		}
 	}	
 
-	assign("current", tmpc, envir=u[[1]]);
-	return(s);
+	assign("current", tmpc, envir=u[[1]])
+	return(s)
 }
 
 
@@ -156,12 +156,12 @@ sampleuVector<-function(u,size) {
 # returns number of balls remaining in urn
 
 sum.urn<-function(u,...,na.rm)  {
-	tmp<- get("current", envir=u[[1]]);
+	tmp<- get("current", envir=u[[1]])
 	if (is.list(tmp)) {
-		return (length(tmp)+sum(...));
+		return (length(tmp)+sum(...))
 	} else {
 
-		return(sum(tmp)+sum(...));
+		return(sum(tmp)+sum(...))
 	}
 
 }
@@ -179,9 +179,9 @@ refill.urn<-function(u) {
 	}
 	assign("current", get("initial", envir=u[[1]]), envir=u[[1]]);	
 	if (exists("pc", envir=u[[1]], inherits=FALSE)) {
-		 assign("pc", get("p", envir=u[[1]]), envir=u[[1]]);
+		 assign("pc", get("p", envir=u[[1]]), envir=u[[1]])
 	}
-	return(sum(u));
+	return(sum(u))
 }
 
 # summary.urn(u)
@@ -190,10 +190,10 @@ refill.urn<-function(u) {
 #
 summary.urn<-function(object, ...) {
 	if (is.list(get("current", envir=object[[1]]))) {
-		return(table(as.vector(get("current", envir=object[[1]]),mode="numeric")));
+		return(table(as.vector(get("current", envir=object[[1]]),mode="numeric")))
 	} else {
 		return(as.table(as.vector(get("current", envir=object[[1]]),
-		mode="numeric")));
+		mode="numeric")))
 	}
 
 }
@@ -212,15 +212,15 @@ sampleu<- function(u, size) {
 		stop("requires an urn")
 	}
 	if(missing(size)) {	
-		size<-1;
+		size<-1
 	}
 	if (size>sum(u)) {
-		stop("Can't take a sample larger than the remaining population");
+		stop("Can't take a sample larger than the remaining population")
 	}
 	if (is.list(get("current", envir=u[[1]]))) {
-		return(sampleuList(u,size));
+		return(sampleuList(u,size))
 	} else {
-		return(sampleuVector(u,size));
+		return(sampleuVector(u,size))
 	}
 }
 
