@@ -1,6 +1,36 @@
+
+# Package Load methods
+
+
+#
+# This gets run by R, but not S-Plus, wich doesn't use .onLoad
+#
+
 .onLoad <- function(lib, pkg) {
-   if((version$major<1) ||(version$minor<6 && version$major==1)) {
-    stop("This version for R 1.6 or later")
+  if (is.R()) {
+    try(print(utils::citation("urn")),silent=FALSE)
+  } 
+  return(TRUE)
+}
+
+# These .on.attach and .on.detach are used in Splus
+
+.on.attach <- function(lib, pkg) {
+  if (!is.R()) {
+    if (require(pkgutils,quietly=TRUE)){
+      print(citation("urn"))
+    } else  {
+      cat("To cite the Urn package in publications use:\n\n",
+       paste("Altman, M., (2006)", "(Software version: R Package, Urn, version 1.01)\n\n")
+      )
+    }
+  }
+  return(TRUE)
+}
+
+.on.detach<-function(...) {
+  if(!is.R()) {
+    remove(".urn",where=0)
   }
 }
 

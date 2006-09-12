@@ -3,7 +3,7 @@
 # A simple urn for sampling without replacement, repeatedly
 #
 #    urn.R -- a library for sampling from urns
-#    Copyright (C) 2003  Micah Altman
+#    Copyright (C) 2003-6 Micah Altman
 #
 #    This program is free software; you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -28,19 +28,17 @@
 #	number of each type of 'balls' in the urn
 
 urn<-function  (u, prob=NULL) {
-
 	if (is.null(u)) {
 		stop("Argument items missing with no default")
-		return (null)
+		return (NULL)
 	}
 	if (!is.vector(u)) {
 		stop("u must be a vector")
-		return (null)
+		return (NULL)
 	}
-	if (sum(u<=0)>0) {
-		stop("u must be >0")
+	if (!is.list(u) && sum(u<=0)>0) {
+		stop("all elements of a numeric vector specification must be >0")
 	}
-	tmp <-new.env()
 	if (!is.null(prob) ) {
 		if (!is.vector(prob)) {
 			stop("Prob must be vector")
@@ -50,71 +48,148 @@ urn<-function  (u, prob=NULL) {
 		}
 		if (!is.list(u)) {
 			stop("Weights are only valid with list type.")
-			return(null)
+			return(NULL)
 		}
 		if (sum(prob<0)>=1) {
 			stop("Weights must be non-negative")
-			return(null)
+			return(NULL)
 		}
 		if (sum(prob)==0) {
 			stop("Weights sum to zero.")
-			return(null)
+			return(NULL)
 		}
-		assign("p", as.list(prob), envir=tmp)
-		assign("pc", as.list(prob), envir=tmp)
-	} 
-	assign("current", u, envir=tmp)
-	assign("initial", u, envir=tmp)
-	ul<-list(tmp)
+
+	}
+	if (is.R()) {
+	 urnID <-new.env() 
+  } else {
+    if(!exists(".urn",where=0)) {
+      assign(".urn",list(),where=0)
+    }
+    tmplist<-get(".urn",where=0)
+    urnID<-length(tmplist)+1
+    tmplist[[urnID]]= list()
+    assign(".urn",tmplist,where=0)
+  }
+  ul<-list(urnID)
 	class(ul)<-"urn"
-	return(ul)
+	if (!is.null(prob)) {
+   		urnAssign(ul,"p", as.list(prob))
+	 	urnAssign(ul,"pc", as.list(prob))
+	}
+	 urnAssign(ul,"current", u)
+	 urnAssign(ul,"initial", u)
+  return(ul)
 }
+
+###
+### Accessor methods...
+### 
+### Why do I do this?  So that it works in S-Plus and R as
+### cleanly as possible.
+###
+### In order to make urn most useful, the interface should
+### allow one to "draw" from an urn. This changes the state
+### of the urn. 
+###
+### Given R/S-Plus's orientation to pass-by-value, there were a few
+### possible approaches:
+###        1. two steps, explicitly replacing the object:
+###             u<-sampleu(u); sample<-get_sample(u)
+###        
+###         This is awkward.
+###
+###       2. store state in the user's environment.
+###       I take this approach in S-plus, for lack of a better one.
+###
+###       3. Store state in a new environment
+###       Currently I use this with R. It works.
+### 
+###       4. Store state in a closure in the module's environment
+###       This is cleaner than 3. I will eventually do this
+
+
+urnAssign<-function(self,memberName,memberValue) {
+  	if (is.R()) {  
+      assign(memberName, memberValue, envir=self[[1]])
+    }  else {
+        urnID = self[[1]]
+        tmplist<-get(".urn",where=0)
+        tmpUrn<-tmplist[[urnID]]
+        tmpUrn[[memberName]]=memberValue
+        tmplist[[urnID]]=tmpUrn
+        assign(".urn",tmplist,where=0)
+    }
+}
+
+urnGet<-function(self,memberName) {
+  	if (is.R()) {  
+      get(memberName, envir=self[[1]])
+    } else {
+        urnID = self[[1]]
+        tmplist<-get(".urn",where=0)
+        tmpUrn<-tmplist[[urnID]]
+        tmpUrn[[memberName]]
+    }
+}
+
+urnExists<-function(self,memberName) {
+  	if (is.R()) {  
+      exists(memberName, envir=self[[1]],inherits=FALSE)
+    } else {
+        urnID = self[[1]]
+        tmplist<-get(".urn",where=0)
+        tmpUrn<-tmplist[[urnID]]
+        is.null(tmpUrn[[memberName]])
+    }  
+}
+
+
 
 # print.urn (u)
 #
 # pretty printing function
 
 print.urn<- function( x, ... ) {
-	if (is.list(get("current", envir=x[[1]]))) {
+	if (is.list(urnGet(x,"current"))) {
 		cat ("List type: \n")
 	} else {
 		cat ("Vector type: \n")
 	}
        cat(	paste("current: ", 
-			paste(get("current", envir=x[[1]]), collapse=", ")
+			paste(urnGet(x,"current"), collapse=", ")
 		, "\n") 
   	)
 
 	cat(	paste("initial: ", 
-			paste(get("initial", envir=x[[1]]), collapse=", ")
+			paste(urnGet(x,"initial"), collapse=", ")
 		, "\n") 
   	)
-	if (exists("p", envir=u[[1]], inherits=FALSE)) {
+	if (urnExists(x,"p")) {
 	   cat(	paste("probability weights: ", 
-			paste(get("p", envir=x[[1]]), collapse=", ")
+			paste(urnGet(x,"p"), collapse=", ")
 		, "\n") 
   	   )
 	}
 
 }
 
-
 sampleuList<-function(u,size) {
-	tmpc = get("current", envir=u[[1]])
+	tmpc = urnGet(u,"current")
 	s = seq(1,length(tmpc))
 
 	
-	if (!exists("p", envir=u[[1]], inherits=FALSE)) {
+	if (!urnExists(u,"p")) {
 		ind = sample(s,size)
 	} else {
-		p = get("pc", envir=u[[1]])
+		p = urnGet(u,"pc")
 		ind = sample(s,size,prob=p)
-		p[ind]=NULL
-		assign("pc", p, envir=u[[1]])
+		p=p[setdiff(1:length(p),ind)]
+		urnAssign(u,"pc", p)
 	}
 	r = tmpc[ind]
-	tmpc[ind]=NULL
-	assign("current", tmpc, envir=u[[1]])
+	tmpc=tmpc[setdiff(1:length(tmpc),ind)]
+	urnAssign(u,"current",tmpc)
 	return(r);	
 }
 
@@ -124,7 +199,7 @@ sampleuVector<-function(u,size) {
 	s = vector(mode="numeric",size)
 	
 	# for performance, do these outside of loop
-	tmpc = get("current", envir=u[[1]])
+	tmpc = urnGet(u,"current")
 	n = sum(tmpc); 
 	r=runif(size); 
 	
@@ -144,7 +219,7 @@ sampleuVector<-function(u,size) {
 		}
 	}	
 
-	assign("current", tmpc, envir=u[[1]])
+	urnAssign(u,"current", tmpc)
 	return(s)
 }
 
@@ -155,13 +230,16 @@ sampleuVector<-function(u,size) {
 #
 # returns number of balls remaining in urn
 
-sum.urn<-function(u,...,na.rm)  {
-	tmp<- get("current", envir=u[[1]])
+sum.urn<-function(u,...,na.rm=FALSE)  {
+	tmp<- urnGet(u,"current")
+	partialSum=0
+	if (length(list(...))>0){
+	   partialSum=sum(...,na.rm)
+  }
 	if (is.list(tmp)) {
-		return (length(tmp)+sum(...))
+		return (length(tmp)+partialSum)
 	} else {
-
-		return(sum(tmp)+sum(...))
+		return(sum(tmp)+partialSum)
 	}
 
 }
@@ -177,9 +255,9 @@ refill.urn<-function(u) {
 	if (!inherits(u,"urn")) {
 		stop("requires an urn")
 	}
-	assign("current", get("initial", envir=u[[1]]), envir=u[[1]]);	
-	if (exists("pc", envir=u[[1]], inherits=FALSE)) {
-		 assign("pc", get("p", envir=u[[1]]), envir=u[[1]])
+	urnAssign(u,"current", urnGet(u, "initial"))
+	if (urnExists(u, "pc")) {
+		 urnAssign(u,"pc", urnGet(u,"p"))
 	}
 	return(sum(u))
 }
@@ -189,11 +267,15 @@ refill.urn<-function(u) {
 # u - urn
 #
 summary.urn<-function(object, ...) {
-	if (is.list(get("current", envir=object[[1]]))) {
-		return(table(as.vector(get("current", envir=object[[1]]),mode="numeric")))
+	tmpCurrent= urnGet(object,"current")
+	if (is.list(tmpCurrent)) {
+		return(table(unlist(tmpCurrent)))
 	} else {
-		return(as.table(as.vector(get("current", envir=object[[1]]),
-		mode="numeric")))
+		# coerce to table by hand, since SPLUS doesn't have "as.table"
+		tt = table(tmpCurrent)
+		tt[] = as.numeric(tmpCurrent)
+		names(tt)= 1:length(tt)
+		return(tt)
 	}
 
 }
@@ -217,11 +299,12 @@ sampleu<- function(u, size) {
 	if (size>sum(u)) {
 		stop("Can't take a sample larger than the remaining population")
 	}
-	if (is.list(get("current", envir=u[[1]]))) {
+	if (is.list(urnGet(u,"current"))) {
 		return(sampleuList(u,size))
 	} else {
 		return(sampleuVector(u,size))
 	}
 }
+
 
 

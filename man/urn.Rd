@@ -50,7 +50,7 @@ There are many references explaining sampling without replacement, this is one e
 library(urn)
 
 # Create urn with 3 items
-u<-urn(list(1,2,3))
+u<-urn(list("red","green","blue"))
 
 # custom print and summary methods
 print(u )
@@ -70,11 +70,15 @@ summary(ub)
 
 
 # take ten draws each of 10001 items
-rep<-replicate(10, table(sampleu(ub,10001)), simplify=TRUE)
-print(rep)
+if (is.R()) {
+	reps<-replicate(10, table(sampleu(ub,10001)), simplify=TRUE)
+} else {
+	reps<-sapply(intger(10), function(x)table(sampleu(ub,10001)), simplify=TRUE)
+}
+print(reps)
 
 # should equal 51006
-sum(rep[1,])
+sum(reps[1,])
 
 }
 

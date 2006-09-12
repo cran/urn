@@ -1,0 +1,12 @@
+citHeader("To cite the urn package in publications use:")
+
+citEntry(entry="unpublished",
+         title = "URN: An R-Package for Resampling without Replaacement",
+         author = personList(as.person("M. Altman")),
+         year         = 2006,
+         note         = "Software: R Package, ufn, version 1.0 ",
+         url          = "http://www.hmdc.harvard.edu/micah_altman/", 
+         textVersion = 
+           paste("Altman, M., (2006)", 
+              "(Software version: R Package, Urn, version 1.0)")
+)
