@@ -1,6 +1,10 @@
 #public methods
-export(urn, sampleu, refill.urn)
+export(urn, sampleu, sample, sample.default, refill)
 # export methods subclassing other public methods
 S3method(print, urn)
 S3method(sum, urn)
 S3method(summary, urn)
+S3method(sample, urn)
+S3method(refill, urn)
+
+

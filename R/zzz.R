@@ -17,11 +17,12 @@
 
 .on.attach <- function(lib, pkg) {
   if (!is.R()) {
-    if (require(pkgutils,quietly=TRUE)){
+    mrequire<-require
+    if (mrequire(pkgutils,quietly=TRUE)){
       print(citation("urn"))
     } else  {
       cat("To cite the Urn package in publications use:\n\n",
-       paste("Altman, M., (2006)", "(Software version: R Package, Urn, version 1.01)\n\n")
+       paste("Altman, M., (2007)", "(Software version: R Package, Urn, version 2.1)\n\n")
       )
     }
   }
@@ -30,7 +31,9 @@
 
 .on.detach<-function(...) {
   if(!is.R()) {
-    remove(".urn",where=0)
+	if (exists(".urn",where=0)) {
+    		remove(".urn",where=0)
+	}
   }
 }
 

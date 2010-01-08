@@ -1,23 +1,28 @@
 \name{urn}
 \alias{urn}
 \alias{sampleu}
+\alias{sample}
+\alias{refill}
+\alias{sample.default}
+\alias{sample.urn}
 \alias{refill.urn}
 \title{ Repeated Sampling Without Replacement }
 \description{ Generate repeated samples of the same list of objects without replacement. }
 
 \usage{
 u<-urn(items,prob=NULL)
-s<-sampleu(u,n)
+s<-sample.urn(u,n,replace=TRUE)
+s<-sample(x, size, ...) 
+s<-sample.default(x, size, replace=FALSE, prob=NULL, ...) 
+s<-sample.urn( x, size, replace=TRUE, prob=NULL, ...) 
 size<-refill.urn(u)
+size<-refill(u)
 }
 
 \arguments{
 	\item{items}{
 Items -- A set of items to be sampled. If 'items' is a list, calls to urn.sample
-are treated identically to 'sample' except that  $\left( 1 \right)$
-
-repeated calls to urn.sample sample without replacement from items
-$\left( 2 \right)$ the probability distribution is defined at urn creation time.
+are treated identically to 'sample' except that (1) repeated calls to urn.sample sample without replacement from items and (2) the probability distribution is defined at urn creation time.
 
 If 'items' is a vector, however, each item in the vector is interpreted
 as the frequency of occurence of that type of item in the urn.  
@@ -31,7 +36,7 @@ items lists only.}
 }
 
 \details{
-sample() allows a single sample to be taken without replacement. Call urn.sample when
+	\code{urn} creates an urn. \code{sampleu} allows a single sample to be taken without replacement. Call usaple when
 repeated samples without replacement are needed. Use sum() to determine population
 left in urn, and refill.urn to restore population to originial levels.
 
@@ -43,7 +48,7 @@ There are many references explaining sampling without replacement, this is one e
 
 }
 \seealso{
-  \code{\link{sample}}
+  \code{\link[base]{sample}}
 }
 \examples{
 
@@ -57,13 +62,13 @@ print(u )
 summary(u)
 
 # draw 2 samples from the urn
-sampleu(u,2)
+sample(u,2)
 # can't sample more items than in the urn, without refilling:
 # sampleu(u,2)
 sum(u)
-sampleu(u,1)
+sample(u,1)
 # refill
-refill.urn(u)  
+refill(u)  
 # Create an urn with 100010 items of two types in ~51:49 proportions
 ub<-urn(c(51006,49004))
 summary(ub)
@@ -71,9 +76,9 @@ summary(ub)
 
 # take ten draws each of 10001 items
 if (is.R()) {
-	reps<-replicate(10, table(sampleu(ub,10001)), simplify=TRUE)
+	reps<-replicate(10, table(sample(ub,10001)), simplify=TRUE)
 } else {
-	reps<-sapply(intger(10), function(x)table(sampleu(ub,10001)), simplify=TRUE)
+	reps<-sapply(integer(10), function(x)table(sample(ub,10001)), simplify=TRUE)
 }
 print(reps)
 
@@ -85,7 +90,7 @@ sum(reps[1,])
 \author{
 Micah Altman 
 \email{Micah\_Altman\@harvard.edu}  
-\url{http://www.hmdc.harvard.edu/micah_altman/}
+\url{http://maltman.hmdc.harvard.edu/}
 }
 
 \keyword{datagen}

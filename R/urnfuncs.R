@@ -151,13 +151,19 @@ urnExists<-function(self,memberName) {
 # pretty printing function
 
 print.urn<- function( x, ... ) {
-	if (is.list(urnGet(x,"current"))) {
+	current<-urnGet(x,"current")
+	if (is.list(current)) {
 		cat ("List type: \n")
 	} else {
 		cat ("Vector type: \n")
+		if (!is.null(names(current))) {
+			cat(paste("Names: ", 
+				paste(names(current),collapse=", " ) , "\n"))
+		}
 	}
-       cat(	paste("current: ", 
-			paste(urnGet(x,"current"), collapse=", ")
+       cat(	
+       	        paste("current: ", 
+			paste(current, collapse=", ")
 		, "\n") 
   	)
 
@@ -174,7 +180,7 @@ print.urn<- function( x, ... ) {
 
 }
 
-sampleuList<-function(u,size) {
+sampleuList<-function(u,size,replace) {
 	tmpc = urnGet(u,"current")
 	s = seq(1,length(tmpc))
 
@@ -189,12 +195,14 @@ sampleuList<-function(u,size) {
 	}
 	r = tmpc[ind]
 	tmpc=tmpc[setdiff(1:length(tmpc),ind)]
-	urnAssign(u,"current",tmpc)
+	if (!replace) {
+		urnAssign(u,"current",tmpc)
+	}
 	return(r);	
 }
 
 
-sampleuVector<-function(u,size) {
+sampleuVector<-function(u,size,replace) {
 
 	s = vector(mode="numeric",size)
 	
@@ -219,7 +227,9 @@ sampleuVector<-function(u,size) {
 		}
 	}	
 
-	urnAssign(u,"current", tmpc)
+	if (!replace) {
+		urnAssign(u,"current", tmpc)
+	}
 	return(s)
 }
 
@@ -250,10 +260,10 @@ sum.urn<-function(u,...,na.rm=FALSE)  {
 #
 # refills urn, restoring initial distribution of balls
 
-
-refill.urn<-function(u) {
+refill <- function(u, ...) UseMethod("refill")
+refill.urn<-function(u,...) {
 	if (!inherits(u,"urn")) {
-		stop("requires an urn")
+		stop("needs an urn")
 	}
 	urnAssign(u,"current", urnGet(u, "initial"))
 	if (urnExists(u, "pc")) {
@@ -271,16 +281,16 @@ summary.urn<-function(object, ...) {
 	if (is.list(tmpCurrent)) {
 		return(table(unlist(tmpCurrent)))
 	} else {
-		# coerce to table by hand, since SPLUS doesn't have "as.table"
-		tt = table(tmpCurrent)
-		tt[] = as.numeric(tmpCurrent)
-		names(tt)= 1:length(tt)
+		tt = tmpCurrent
+		if (is.null(names(tt))) {
+			names(tt) = 1:length(tt)
+		}
 		return(tt)
 	}
 
 }
 	
-# sampleu (u,size)
+# sampleu (u,size,replace)
 #
 # u - urn to sample from
 # size - number of balls to draw as a sample
@@ -288,23 +298,49 @@ summary.urn<-function(object, ...) {
 # Returns a vector, representing the number of balls of
 # each type drawn from the urn 
 
-sampleu<- function(u, size) {
+sampleu<- function(u, size,replace) {
 	
 	if (!inherits(u,"urn")) {
-		stop("requires an urn")
+		stop("needs an urn")
 	}
 	if(missing(size)) {	
 		size<-1
 	}
 	if (size>sum(u)) {
-		stop("Can't take a sample larger than the remaining population")
+		warning("Can't take a sample larger than the remaining population")
 	}
 	if (is.list(urnGet(u,"current"))) {
-		return(sampleuList(u,size))
+		return(sampleuList(u,size,replace))
 	} else {
-		return(sampleuVector(u,size))
+		return(sampleuVector(u,size,replace))
 	}
 }
+
+# sample
+# sample.default
+# sample.urn
+#
+# Turns sample into a generic method and adds sample.urn
+#
+# x - urn
+# size - size of sample
+# replace - whether to replace
+# prob - probability weights
+
+sample <- function(x, size, ...) UseMethod("sample")
+sample.default <- function (x, size,  ...) { 		 
+	return(base::sample(x,size,...))
+}
+sample.urn<-function( x, size, replace=FALSE, ...) {
+	#if (!missing(prob)) {
+	#	warning("probability set in urn creation, not sampling")
+	#}
+	if (length(list(...))>0) {
+		warning("extra arguments ignored")
+	}
+	return(sampleu(x,size,replace))
+}
+
 
 
 
