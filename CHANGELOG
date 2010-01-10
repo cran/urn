@@ -12,4 +12,6 @@
 2.1
 - Bugfix in summary.urn
 - R cmd check under 2.10.1 fixes
-- Standarize S3 methdos
+- Standarize S3 methods
+2.2
+- Fix typos
